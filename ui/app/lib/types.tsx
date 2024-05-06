@@ -1,5 +1,5 @@
 export interface Message {
-  messageType: "REGISTERED" | "UNREGISTERED" | "STREAMAUDIO";
+  messageType: "REGISTERED" | "UNREGISTERED" | "STREAMAUDIO" | "MEMBERS";
   content: string;
   username: string;
   roomName: string;

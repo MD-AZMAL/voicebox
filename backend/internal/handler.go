@@ -36,16 +36,14 @@ func (h *WsHandler) RegisterClient(w http.ResponseWriter, r *http.Request) {
 		Conn:     conn,
 		Username: username,
 		RoomName: roomName,
-		Messages: make(chan Message),
+		Messages: make(chan *Message),
 	}
 
 	log.Println(client)
 
 	h.hub.Register <- client
 
-	log.Println("Sent to register")
-
-	go client.SendMessage(h.mux)
+	// go client.SendMessage(h.mux)
 	go client.ReadMessage(h.hub, h.mux)
 }
 

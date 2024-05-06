@@ -8,24 +8,9 @@ import { useEffect, useState } from "react";
 export default function Members() {
   const { roomName } = useRoom();
   const [members, setMembers] = useState<string[]>([]);
+  const [speakingMember, setSpeakingMember] = useState<String>("");
 
   const { conn } = useWebSocket();
-
-  const getInitialMembers = async (name: string) => {
-    try {
-      const res = await fetch(
-        `http://localhost:8080/get-members?roomName=${name}`
-      );
-
-      const data = await res.json();
-
-      console.log(data, "data");
-
-      setMembers(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   useEffect(() => {
     console.log("Conn changed ", conn);
@@ -34,28 +19,64 @@ export default function Members() {
       conn.onmessage = (ev) => {
         console.log(ev, "ev");
         const data = JSON.parse(ev.data) as Message;
-        console.log(data, "ev data");
 
         if (data.messageType === "REGISTERED") {
-          setMembers((prev) => [data.username, ...prev]);
+          setMembers((prev) => [...prev, data.username]);
+        }
+
+        if (data.messageType === "UNREGISTERED") {
+          setMembers((prev) => [...prev.filter((m) => m != data.username)]);
+        }
+
+        if (data.messageType === "STREAMAUDIO") {
+          setSpeakingMember(data.username);
+        }
+
+        if (data.messageType === "MEMBERS") {
+          const members = JSON.parse(data.content) as string[];
+
+          const user = sessionStorage.getItem("username") || "";
+
+          console.log(members);
+
+          setMembers((prev) => [...members.filter((m) => m != user), ...prev]);
         }
       };
     }
   }, [conn]);
 
   useEffect(() => {
-    if (roomName != "" && conn) {
-      getInitialMembers(roomName);
+    if (!roomName) {
+      setMembers([]);
     }
   }, [roomName]);
 
   return (
-    <div className="flex-1 grid grid-flow-dense w-full">
-      {members.map((member) => (
-        <div key={member} className="bg-red-500">
-          <p>{member}</p>
-        </div>
-      ))}
+    <div className="flex-1 gap-6 grid grid-flow-col w-full">
+      {members.length
+        ? members.map((member) => (
+            <div
+              key={member}
+              className="place-items-center grid bg-gray-500 rounded-lg w-full h-full"
+            >
+              <div
+                className={`place-items-center grid ${
+                  member === speakingMember ? "bg-green-300" : "bg-gray-400"
+                }  ${
+                  member === speakingMember ? "text-green-800" : ""
+                } shadow-lg hover:shadow-2xl rounded-full w-[6rem] h-[6rem] cursor-pointer`}
+              >
+                <p>{member}</p>
+              </div>
+            </div>
+          ))
+        : roomName && (
+            <div className="place-items-center grid">
+              <p className="text-slate-300 text-sm">
+                Waiting for people to join...
+              </p>
+            </div>
+          )}
     </div>
   );
 }

@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/binary"
+	"encoding/json"
 	"log"
 	"sync"
 )
@@ -15,14 +14,17 @@ func (c *Client) SendMessage(mux *sync.Mutex) {
 	for {
 		message, ok := <-c.Messages
 		log.Println("SendMessage", message)
+		log.Println(c)
 
 		if !ok {
 			return
 		}
 
 		mux.Lock()
-		c.Conn.WriteJSON(message)
+		err := c.Conn.WriteJSON(message)
+		log.Println(err, "err")
 		mux.Unlock()
+
 	}
 }
 
@@ -39,7 +41,7 @@ func (c *Client) ReadMessage(hub *Hub, mux *sync.Mutex) {
 	for {
 		mux.Lock()
 		_, m, err := c.Conn.ReadMessage()
-		log.Println("RecieveMessage", string(m))
+		// log.Println("RecieveMessage", string(m))
 		mux.Unlock()
 
 		if err != nil {
@@ -49,24 +51,14 @@ func (c *Client) ReadMessage(hub *Hub, mux *sync.Mutex) {
 
 		var message Message
 
-		buf := &bytes.Buffer{}
-
-		err = binary.Write(buf, binary.BigEndian, m)
+		err = json.Unmarshal(m, &message)
 
 		if err != nil {
-			log.Printf("buffer error: %v", err)
+			log.Printf("json error: %v", err)
 			break
 		}
 
-		err = binary.Read(buf, binary.BigEndian, &message)
-
-		log.Println("Unmarshalled message, ", message)
-		log.Println("err", err)
-
-		if err != nil {
-			log.Printf("buffer error: %v", err)
-			break
-		}
+		log.Println("Parsed Message", message.MessageType)
 
 		hub.Broadcast <- &message
 	}

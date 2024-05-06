@@ -16,7 +16,7 @@ export default function CreateRoomForm() {
   const handleSubmit = async () => {
     const requestBody = {
       name: roomName?.toLowerCase().replaceAll(" ", "-"),
-      createdBy: localStorage.getItem("username"),
+      createdBy: sessionStorage.getItem("username"),
     };
 
     console.log(requestBody, "body");

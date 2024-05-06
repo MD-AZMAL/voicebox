@@ -1,8 +1,8 @@
 import Callzone from "@/app/components/callzone";
 import CreateRoomForm from "@/app/components/createRoomForm";
-import JoinRoomForm from "@/app/components/joinRoomForm";
-import RoomItem, { RoomItemSkeleton } from "@/app/components/roomItem";
+import { RoomItemSkeleton } from "@/app/components/roomItem";
 import Rooms from "@/app/components/rooms";
+import UserBadge from "@/app/components/userBadge";
 import { Suspense } from "react";
 
 export default function Dashboard() {
@@ -20,9 +20,9 @@ export default function Dashboard() {
             <Rooms />
           </Suspense>
         </div>
-        {/* <div>
-          <JoinRoomForm />
-        </div> */}
+        <div>
+          <UserBadge />
+        </div>
       </div>
       <div className="col-span-4 p-12 overflow-hidden">
         <Callzone />

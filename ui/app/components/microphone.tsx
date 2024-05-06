@@ -1,11 +1,15 @@
 "use client";
 
+import { useRoom } from "@/app/lib/context/room";
 import { useWebSocket } from "@/app/lib/context/socket";
+import { Message } from "@/app/lib/types";
+import { base64ArrayBuffer } from "@/app/utils/stringUtil";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
 export default function Microphone() {
   const { conn } = useWebSocket();
+  const { roomName } = useRoom();
 
   const [isMute, setIsMute] = useState<Boolean>(true);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -19,12 +23,14 @@ export default function Microphone() {
 
   const handleClick = () => {
     if (conn && conn.OPEN) {
+      console.log("Sending message ...");
+
       conn.send(
         JSON.stringify({
           messageType: "STREAMAUDIO",
           content: "asd",
           roomName: "test",
-          username: localStorage.getItem("username"),
+          username: sessionStorage.getItem("username"),
         })
       );
     }
@@ -34,31 +40,6 @@ export default function Microphone() {
     const micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, frameRate: 120 },
     });
-
-    // const mediaRecorder = new MediaRecorder(micStream);
-
-    // mediaRecorder.start(10);
-
-    // // Start recording when data is available
-    // mediaRecorder.ondataavailable = function (event) {
-    //   if (event.data.size > 0) {
-    //     // Send data to the server via WebSocket
-    //     console.log("blog event : ", event.data);
-
-    //     const audioBlob = new Blob([event.data], {
-    //       type: "audio/webm;codecs=opus;",
-    //     });
-
-    //     const audioUrl = URL.createObjectURL(audioBlob);
-
-    //     console.log(audioBlob);
-
-    //     if (audioRef.current) {
-    //       audioRef.current.src = audioUrl;
-    //       audioRef.current.autoplay = true;
-    //     }
-    //   }
-    // };
 
     setMediaStream(micStream);
 
@@ -71,12 +52,38 @@ export default function Microphone() {
     const delayNode = new DelayNode(audioContext, { delayTime: 1 });
 
     mediaStreamAudioSourceNode.connect(delayNode);
-    mediaStreamAudioSourceNode.connect(audioContext.destination);
+    // mediaStreamAudioSourceNode.connect(audioContext.destination);
 
     // if (audioRef.current) {
-    //   audioRef.current.srcObject = micStream;
+    //   audioRef.current.srcObject = mediaStreamAudioSourceNode.mediaStream;
     //   audioRef.current.autoplay = true;
     // }
+
+    const mediaRecorder = new MediaRecorder(
+      mediaStreamAudioSourceNode.mediaStream
+    );
+
+    mediaRecorder.start();
+
+    mediaRecorder.ondataavailable = async (event) => {
+      if (event.data.size > 0) {
+        console.log(event.data);
+        const arrayBuffer = await event.data.arrayBuffer();
+
+        if (conn) {
+          conn.send(
+            JSON.stringify({
+              messageType: "STREAMAUDIO",
+              content:
+                "data:audio/webm;codecs=opus;base64," +
+                base64ArrayBuffer(arrayBuffer),
+              roomName: roomName,
+              username: sessionStorage.getItem("username"),
+            } as Message)
+          );
+        }
+      }
+    };
   };
 
   const handleMicStop = () => {
@@ -106,6 +113,7 @@ export default function Microphone() {
       <Button
         className="place-items-center grid shadow-lg hover:shadow-2xl rounded-full w-[6rem] h-[6rem] cursor-pointer"
         onClick={toggleMute}
+        disabled={roomName === ""}
       >
         {!isMute ? (
           <svg
@@ -147,10 +155,6 @@ export default function Microphone() {
             <path d="M12 17l0 4" />
           </svg>
         )}
-      </Button>
-      <Button onClick={handleClick}>
-        send Random Message{" "}
-        {(localStorage && localStorage.getItem("username")) || ""}
       </Button>
     </>
   );

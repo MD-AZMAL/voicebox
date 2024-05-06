@@ -128,23 +128,12 @@ func DeleteRoomHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unable to delete", http.StatusBadRequest)
 }
 
-func GetMembersHandler(w http.ResponseWriter, r *http.Request) {
-	roomName := r.URL.Query().Get("roomName")
-
+func GetConnectedClients(roomName string) []string {
 	clientsResponse := make([]string, 0)
 
 	for _, c := range Rooms[roomName].Clients {
 		clientsResponse = append(clientsResponse, c.Username)
 	}
 
-	membersJson, err := json.Marshal(clientsResponse)
-
-	if err != nil {
-		http.Error(w, "JSON parse error", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(membersJson)
+	return clientsResponse
 }

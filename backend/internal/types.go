@@ -22,7 +22,7 @@ type Client struct {
 	Conn     *websocket.Conn
 	Username string `json:"username"`
 	RoomName string `json:"room"`
-	Messages chan Message
+	Messages chan *Message
 }
 
 type ClientResponse struct {
@@ -36,19 +36,21 @@ const (
 	REGISTERED   MessageType = "REGISTERED"
 	UNREGISTERED MessageType = "UNREGISTERED"
 	STREAMAUDIO  MessageType = "STREAMAUDIO"
+	MEMBERS      MessageType = "MEMBERS"
 )
 
 type Message struct {
 	MessageType MessageType `json:"messageType"`
-	Content     []byte      `json:"content"`
+	Content     string      `json:"content"`
 	RoomName    string      `json:"roomName"`
 	Username    string      `json:"username"`
 }
 
 type Hub struct {
-	Register   chan *Client
-	Unregister chan *UnRegisterClientBody
-	Broadcast  chan *Message
+	Register      chan *Client
+	Unregister    chan *UnRegisterClientBody
+	Broadcast     chan *Message
+	SelfBroadcast chan *Message
 }
 
 type WsHandler struct {

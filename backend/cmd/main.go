@@ -19,12 +19,11 @@ func main() {
 
 	wsHandler := internal.CreateWsHandler(hub, mux)
 
-	go hub.Run()
+	go hub.Run(mux)
 
 	http.HandleFunc("/get-rooms", internal.GetRoomHandler)
 	http.HandleFunc("/create-room", internal.CreateRoomHandler)
 	http.HandleFunc("/delete-room", internal.DeleteRoomHandler)
-	http.HandleFunc("/get-members", internal.GetMembersHandler)
 	http.HandleFunc("/ws/register", wsHandler.RegisterClient)
 	http.HandleFunc("/ws/unregister", wsHandler.UnRegisterClient)
 

@@ -16,7 +16,7 @@ export default function LoginForm() {
     if (username) {
       console.log(username);
 
-      localStorage.setItem("username", username);
+      sessionStorage.setItem("username", username);
 
       try {
         await loginUser();

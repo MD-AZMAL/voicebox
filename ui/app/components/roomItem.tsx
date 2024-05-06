@@ -26,14 +26,10 @@ export default function RoomItem({
   const handleClick = () => {
     if (!conn) {
       const ws = new WebSocket(
-        `ws://127.0.0.1:8080/ws/register?username=${localStorage.getItem(
+        `ws://127.0.0.1:8080/ws/register?username=${sessionStorage.getItem(
           "username"
         )}&roomName=${room.name}`
       );
-
-      ws.onmessage = (e) => {
-        console.log("rec : ", e);
-      };
 
       ws.onopen = (e) => {
         console.log("open", e);

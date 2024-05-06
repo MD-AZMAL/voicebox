@@ -1,28 +1,28 @@
 package internal
 
 import (
+	"encoding/json"
 	"log"
+	"sync"
 )
 
 func CreateHub() *Hub {
 	return &Hub{
-		Register:   make(chan *Client),
-		Unregister: make(chan *UnRegisterClientBody),
-		Broadcast:  make(chan *Message, 1024),
+		Register:      make(chan *Client),
+		Unregister:    make(chan *UnRegisterClientBody),
+		Broadcast:     make(chan *Message, 1024),
+		SelfBroadcast: make(chan *Message, 1024),
 	}
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(mux *sync.Mutex) {
 
 	for {
 		select {
 		case c := <-h.Register:
-			log.Println("in register", c)
 			var message Message
 
-			log.Println("dasdsad")
 			if r, ok := Rooms[c.RoomName]; ok {
-				log.Println(r, "ROOM", c, "CLIENT")
 				if _, ok := r.Clients[c.Username]; !ok {
 					r.Clients[c.Username] = c
 
@@ -35,9 +35,26 @@ func (h *Hub) Run() {
 				}
 			}
 
-			h.Broadcast <- &message
+			connectedClients := GetConnectedClients(c.RoomName)
 
-			log.Println("Still in register")
+			membersJson, err := json.Marshal(connectedClients)
+
+			if err != nil {
+				log.Println("Json parse error", err)
+				break
+			}
+
+			selfMessage := Message{
+				MessageType: MEMBERS,
+				RoomName:    c.RoomName,
+				Username:    c.Username,
+				Content:     string(membersJson),
+			}
+
+			log.Println(selfMessage)
+
+			h.SelfBroadcast <- &selfMessage
+			h.Broadcast <- &message
 
 		case c := <-h.Unregister:
 			var message Message
@@ -60,12 +77,34 @@ func (h *Hub) Run() {
 			h.Broadcast <- &message
 
 		case m := <-h.Broadcast:
-			log.Println("Recived broadcast : ", m)
+			log.Println("in broadcast ", m.MessageType)
 			if r, ok := Rooms[m.RoomName]; ok {
 
 				for _, c := range r.Clients {
 					if c.Username != m.Username {
+						// mux.Lock()
+						// c.Messages <- m
 						c.Conn.WriteJSON(m)
+						// mux.Unlock()
+
+					}
+
+				}
+			}
+
+		case m := <-h.SelfBroadcast:
+			log.Println("in self broadcast ", m.MessageType)
+
+			if r, ok := Rooms[m.RoomName]; ok {
+
+				for _, c := range r.Clients {
+					if c.Username == m.Username {
+						// mux.Lock()
+
+						// c.Messages <- m
+						c.Conn.WriteJSON(m)
+						// mux.Unlock()
+
 					}
 
 				}
