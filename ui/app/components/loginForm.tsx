@@ -13,6 +13,8 @@ export default function LoginForm() {
   };
 
   const handleSubmit = async () => {
+    console.log(username);
+
     if (username) {
       sessionStorage.setItem(
         "username",
@@ -20,6 +22,8 @@ export default function LoginForm() {
       );
 
       try {
+        console.log("here");
+
         await loginUser();
       } catch (error) {
         console.log(error);

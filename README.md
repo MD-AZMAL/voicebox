@@ -64,3 +64,8 @@ npm run dev
 - Snappy grid for incomming participants
 - Muted/Unmuted/Speaking status
 - using worker pool architecture in golang per client basis to further improve the throughput
+
+# Submission Video
+
+You can find the submission video in `__submission` directory or
+[click here](/__submission/submission_video.mov)
