@@ -57,3 +57,10 @@ npm run dev
 - Instant feedback on user joining/leaving the room responsively
 - Backend crud APIs for creating rooms, managed separately without affecting websocket processing
 - go routine based worker pool and connection pool to track each client ad its connection information
+
+# Future goals
+
+- Switching to webRTC for better performance
+- Snappy grid for incomming participants
+- Muted/Unmuted/Speaking status
+- using worker pool architecture in golang per client basis to further improve the throughput
