@@ -14,9 +14,10 @@ export default function LoginForm() {
 
   const handleSubmit = async () => {
     if (username) {
-      console.log(username);
-
-      sessionStorage.setItem("username", username);
+      sessionStorage.setItem(
+        "username",
+        username.toLowerCase().replaceAll(" ", "-")
+      );
 
       try {
         await loginUser();

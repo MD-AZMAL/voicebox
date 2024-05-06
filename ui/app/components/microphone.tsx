@@ -3,7 +3,7 @@
 import { useRoom } from "@/app/lib/context/room";
 import { useWebSocket } from "@/app/lib/context/socket";
 import { Message } from "@/app/lib/types";
-import { base64ArrayBuffer } from "@/app/utils/stringUtil";
+import { arrayBufferToBase64 } from "@/app/utils/stringUtil";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
@@ -15,28 +15,37 @@ export default function Microphone() {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [mediaStreamSource, setMediaStreamSource] =
     useState<MediaStreamAudioSourceNode | null>(null);
+  const [processor, setProcessor] = useState<ScriptProcessorNode | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const toggleMute = () => {
     setIsMute((prev) => !prev);
   };
 
-  const handleClick = () => {
-    if (conn && conn.OPEN) {
-      console.log("Sending message ...");
-
+  const scriptProcessor = (e: AudioProcessingEvent) => {
+    if (conn) {
       conn.send(
         JSON.stringify({
           messageType: "STREAMAUDIO",
-          content: "asd",
-          roomName: "test",
+          content: arrayBufferToBase64(e.inputBuffer.getChannelData(0).buffer),
+          roomName: roomName,
           username: sessionStorage.getItem("username"),
-        })
+        } as Message)
       );
     }
   };
 
   const handleMicStart = async () => {
+    if (conn) {
+      conn.send(
+        JSON.stringify({
+          messageType: "MICSTARTED",
+          content: "",
+          roomName: roomName,
+          username: sessionStorage.getItem("username"),
+        } as Message)
+      );
+    }
     const micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, frameRate: 120 },
     });
@@ -49,10 +58,16 @@ export default function Microphone() {
 
     setMediaStreamSource(mediaStreamAudioSourceNode);
 
-    const delayNode = new DelayNode(audioContext, { delayTime: 1 });
+    // TODO: Sending data using scriptProcessor in chunks of byte is not being decoded properly fix this
 
-    mediaStreamAudioSourceNode.connect(delayNode);
-    // mediaStreamAudioSourceNode.connect(audioContext.destination);
+    // const processor = audioContext.createScriptProcessor(1024, 1, 1);
+
+    // processor.onaudioprocess = scriptProcessor;
+
+    // setProcessor(processor);
+
+    // mediaStreamAudioSourceNode.connect(processor);
+    // processor.connect(audioContext.destination);
 
     // if (audioRef.current) {
     //   audioRef.current.srcObject = mediaStreamAudioSourceNode.mediaStream;
@@ -67,7 +82,6 @@ export default function Microphone() {
 
     mediaRecorder.ondataavailable = async (event) => {
       if (event.data.size > 0) {
-        console.log(event.data);
         const arrayBuffer = await event.data.arrayBuffer();
 
         if (conn) {
@@ -76,7 +90,7 @@ export default function Microphone() {
               messageType: "STREAMAUDIO",
               content:
                 "data:audio/webm;codecs=opus;base64," +
-                base64ArrayBuffer(arrayBuffer),
+                arrayBufferToBase64(arrayBuffer),
               roomName: roomName,
               username: sessionStorage.getItem("username"),
             } as Message)
@@ -87,6 +101,22 @@ export default function Microphone() {
   };
 
   const handleMicStop = () => {
+    if (processor) {
+      processor.onaudioprocess = null;
+      processor.removeEventListener("audioprocess", scriptProcessor);
+      setProcessor(null);
+    }
+    if (conn) {
+      conn.send(
+        JSON.stringify({
+          messageType: "MICMUTED",
+          content: "",
+          roomName: roomName,
+          username: sessionStorage.getItem("username"),
+        } as Message)
+      );
+    }
+
     if (mediaStream) {
       mediaStream.getTracks().forEach((track) => track.stop());
       setMediaStream(null);

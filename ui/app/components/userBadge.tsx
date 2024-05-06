@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 export default function UserBadge() {
   const [user, setUser] = useState<string>("");
+
   useEffect(() => {
     setUser(sessionStorage ? sessionStorage.getItem("username") || "" : "");
   }, []);

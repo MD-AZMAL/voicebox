@@ -32,8 +32,6 @@ export default function RoomItem({
       );
 
       ws.onopen = (e) => {
-        console.log("open", e);
-
         setRoomName(room.name);
       };
 

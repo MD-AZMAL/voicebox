@@ -19,8 +19,6 @@ export default function CreateRoomForm() {
       createdBy: sessionStorage.getItem("username"),
     };
 
-    console.log(requestBody, "body");
-
     await fetch("/api/room", {
       method: "POST",
       headers: {
@@ -37,9 +35,9 @@ export default function CreateRoomForm() {
       <Input
         id="room"
         placeholder="Enter your room name"
-        required
         value={roomName ? roomName : ""}
         onChange={handleChange}
+        required
       />
       <Button type="submit" onClick={handleSubmit}>
         Create
