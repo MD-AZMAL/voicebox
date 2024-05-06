@@ -23,6 +23,7 @@ type Client struct {
 	Username string `json:"username"`
 	RoomName string `json:"room"`
 	Messages chan *Message
+	Mux      *sync.Mutex
 }
 
 type ClientResponse struct {
@@ -37,6 +38,8 @@ const (
 	UNREGISTERED MessageType = "UNREGISTERED"
 	STREAMAUDIO  MessageType = "STREAMAUDIO"
 	MEMBERS      MessageType = "MEMBERS"
+	MICMUTED     MessageType = "MICMUTED"
+	MICSTARTED   MessageType = "MICSTARTED"
 )
 
 type Message struct {

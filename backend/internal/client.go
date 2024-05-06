@@ -3,34 +3,48 @@ package internal
 import (
 	"encoding/json"
 	"log"
-	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
-func (c *Client) SendMessage(mux *sync.Mutex) {
+func (c *Client) sendToSocket(m *Message) {
+	c.Mux.Lock()
+	defer func() {
+		c.Mux.Unlock()
+	}()
+
+	err := c.Conn.WriteJSON(m)
+	if err != nil {
+		log.Println("Error in writing complete ", err)
+	}
+}
+
+func (c *Client) readFromSocket() (int, []byte, error) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	t, m, err := c.Conn.ReadMessage()
+	return t, m, err
+}
+
+func (c *Client) SendMessage() {
 	defer func() {
 		c.Conn.Close()
 	}()
 
 	for {
 		message, ok := <-c.Messages
-		log.Println("SendMessage", message)
-		log.Println(c)
 
 		if !ok {
 			return
 		}
 
-		mux.Lock()
-		err := c.Conn.WriteJSON(message)
-		log.Println(err, "err")
-		mux.Unlock()
+		c.sendToSocket(message)
 
 	}
 }
 
-func (c *Client) ReadMessage(hub *Hub, mux *sync.Mutex) {
+func (c *Client) ReadMessage(hub *Hub) {
 	defer func() {
-		log.Println("In defer reciveve message")
 		hub.Unregister <- &UnRegisterClientBody{
 			Username: c.Username,
 			RoomName: c.RoomName,
@@ -39,13 +53,12 @@ func (c *Client) ReadMessage(hub *Hub, mux *sync.Mutex) {
 	}()
 
 	for {
-		mux.Lock()
-		_, m, err := c.Conn.ReadMessage()
-		// log.Println("RecieveMessage", string(m))
-		mux.Unlock()
+		_, m, err := c.readFromSocket()
 
 		if err != nil {
-			log.Printf("error: %v", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Println("Error reading from socket", err)
+			}
 			break
 		}
 
@@ -54,11 +67,9 @@ func (c *Client) ReadMessage(hub *Hub, mux *sync.Mutex) {
 		err = json.Unmarshal(m, &message)
 
 		if err != nil {
-			log.Printf("json error: %v", err)
+			log.Println("json marshalling error", err)
 			break
 		}
-
-		log.Println("Parsed Message", message.MessageType)
 
 		hub.Broadcast <- &message
 	}

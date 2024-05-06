@@ -32,6 +32,7 @@ func (h *Hub) Run(mux *sync.Mutex) {
 						Username:    c.Username,
 					}
 
+					h.Broadcast <- &message
 				}
 			}
 
@@ -40,21 +41,18 @@ func (h *Hub) Run(mux *sync.Mutex) {
 			membersJson, err := json.Marshal(connectedClients)
 
 			if err != nil {
-				log.Println("Json parse error", err)
+				log.Println("Json marshalling error", err)
 				break
 			}
 
-			selfMessage := Message{
+			memberMessage := Message{
 				MessageType: MEMBERS,
 				RoomName:    c.RoomName,
 				Username:    c.Username,
 				Content:     string(membersJson),
 			}
 
-			log.Println(selfMessage)
-
-			h.SelfBroadcast <- &selfMessage
-			h.Broadcast <- &message
+			h.Broadcast <- &memberMessage
 
 		case c := <-h.Unregister:
 			var message Message
@@ -77,38 +75,27 @@ func (h *Hub) Run(mux *sync.Mutex) {
 			h.Broadcast <- &message
 
 		case m := <-h.Broadcast:
-			log.Println("in broadcast ", m.MessageType)
 			if r, ok := Rooms[m.RoomName]; ok {
 
 				for _, c := range r.Clients {
-					if c.Username != m.Username {
-						// mux.Lock()
-						// c.Messages <- m
-						c.Conn.WriteJSON(m)
-						// mux.Unlock()
+					if m.MessageType == MEMBERS {
+						if c.Username == m.Username {
+							// TODO: figure why write go routine is getting haulted (maybe becoz of unsafe read/write)
+							// c.Messages <- m
+							c.Conn.WriteJSON(m)
+						}
+					} else {
+						if c.Username != m.Username {
+							// TODO: figure why write go routine is getting haulted (maybe becoz of unsafe read/write)
+							// c.Messages <- m
+							c.Conn.WriteJSON(m)
 
+						}
 					}
 
 				}
 			}
 
-		case m := <-h.SelfBroadcast:
-			log.Println("in self broadcast ", m.MessageType)
-
-			if r, ok := Rooms[m.RoomName]; ok {
-
-				for _, c := range r.Clients {
-					if c.Username == m.Username {
-						// mux.Lock()
-
-						// c.Messages <- m
-						c.Conn.WriteJSON(m)
-						// mux.Unlock()
-
-					}
-
-				}
-			}
 		}
 	}
 }

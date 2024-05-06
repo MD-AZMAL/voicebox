@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"net/http"
 	"sync"
 
@@ -37,14 +36,15 @@ func (h *WsHandler) RegisterClient(w http.ResponseWriter, r *http.Request) {
 		Username: username,
 		RoomName: roomName,
 		Messages: make(chan *Message),
+		Mux:      &sync.Mutex{},
 	}
-
-	log.Println(client)
 
 	h.hub.Register <- client
 
-	// go client.SendMessage(h.mux)
-	go client.ReadMessage(h.hub, h.mux)
+	// TODO: figure why write go routine is getting haulted (maybe becoz of unsafe read/write)
+	// go client.SendMessage()
+
+	go client.ReadMessage(h.hub)
 }
 
 func (h *WsHandler) UnRegisterClient(w http.ResponseWriter, r *http.Request) {
