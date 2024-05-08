@@ -27,7 +27,9 @@ export default function Microphone() {
       conn.send(
         JSON.stringify({
           messageType: "STREAMAUDIO",
-          content: arrayBufferToBase64(e.inputBuffer.getChannelData(0).buffer),
+          content:
+            "data:audio/webm;codecs=opus;base64," +
+            arrayBufferToBase64(e.inputBuffer.getChannelData(0).buffer),
           roomName: roomName,
           username: sessionStorage.getItem("username"),
         } as Message)
@@ -60,44 +62,44 @@ export default function Microphone() {
 
     // TODO: Sending data using scriptProcessor in chunks of byte is not being decoded properly fix this
 
-    // const processor = audioContext.createScriptProcessor(1024, 1, 1);
+    const processor = audioContext.createScriptProcessor(1024 * 16, 1, 1);
 
-    // processor.onaudioprocess = scriptProcessor;
+    processor.onaudioprocess = scriptProcessor;
 
-    // setProcessor(processor);
+    setProcessor(processor);
 
-    // mediaStreamAudioSourceNode.connect(processor);
-    // processor.connect(audioContext.destination);
+    mediaStreamAudioSourceNode.connect(processor);
+    processor.connect(audioContext.destination);
 
     // if (audioRef.current) {
     //   audioRef.current.srcObject = mediaStreamAudioSourceNode.mediaStream;
     //   audioRef.current.autoplay = true;
     // }
 
-    const mediaRecorder = new MediaRecorder(
-      mediaStreamAudioSourceNode.mediaStream
-    );
+    // const mediaRecorder = new MediaRecorder(
+    //   mediaStreamAudioSourceNode.mediaStream
+    // );
 
-    mediaRecorder.start();
+    // mediaRecorder.start(100);
 
-    mediaRecorder.ondataavailable = async (event) => {
-      if (event.data.size > 0) {
-        const arrayBuffer = await event.data.arrayBuffer();
+    // mediaRecorder.ondataavailable = async (event) => {
+    //   if (event.data.size > 0) {
+    //     const arrayBuffer = await event.data.arrayBuffer();
 
-        if (conn) {
-          conn.send(
-            JSON.stringify({
-              messageType: "STREAMAUDIO",
-              content:
-                "data:audio/webm;codecs=opus;base64," +
-                arrayBufferToBase64(arrayBuffer),
-              roomName: roomName,
-              username: sessionStorage.getItem("username"),
-            } as Message)
-          );
-        }
-      }
-    };
+    //     if (conn) {
+    //       conn.send(
+    //         JSON.stringify({
+    //           messageType: "STREAMAUDIO",
+    //           content:
+    //             "data:audio/webm;codecs=opus;base64," +
+    //             arrayBufferToBase64(arrayBuffer),
+    //           roomName: roomName,
+    //           username: sessionStorage.getItem("username"),
+    //         } as Message)
+    //       );
+    //     }
+    //   }
+    // };
   };
 
   const handleMicStop = () => {

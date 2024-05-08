@@ -1,6 +1,6 @@
 "use client";
 
-import { playAudio } from "@/app/utils/audioUtils";
+import usePlayAudio from "@/app/hooks/usePlayAudio";
 import { useEffect } from "react";
 
 export default function Member({
@@ -12,6 +12,8 @@ export default function Member({
   isSpeaking: boolean;
   audioChunk: string;
 }) {
+  const { playAudio } = usePlayAudio();
+
   useEffect(() => {
     playAudio(audioChunk);
   }, [audioChunk]);

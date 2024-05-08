@@ -64,3 +64,14 @@ export function convertURIToBinary(dataURI: string) {
   }
   return arr;
 }
+
+export function base64ToUint8Array(base64: string) {
+  const binaryData = atob(base64.split(",")[1]);
+
+  const uint8Array = new Uint8Array(binaryData.length);
+  for (let i = 0; i < binaryData.length; i++) {
+    uint8Array[i] = binaryData.charCodeAt(i);
+  }
+
+  return uint8Array;
+}
