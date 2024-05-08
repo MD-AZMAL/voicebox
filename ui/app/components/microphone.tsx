@@ -3,7 +3,7 @@
 import { useRoom } from "@/app/lib/context/room";
 import { useWebSocket } from "@/app/lib/context/socket";
 import { Message } from "@/app/lib/types";
-import { arrayBufferToBase64 } from "@/app/utils/stringUtil";
+
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,9 +27,7 @@ export default function Microphone() {
       conn.send(
         JSON.stringify({
           messageType: "STREAMAUDIO",
-          content:
-            "data:audio/webm;codecs=opus;base64," +
-            arrayBufferToBase64(e.inputBuffer.getChannelData(0).buffer),
+          content: `[${e.inputBuffer.getChannelData(0)}]`,
           roomName: roomName,
           username: sessionStorage.getItem("username"),
         } as Message)

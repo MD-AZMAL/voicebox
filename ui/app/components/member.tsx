@@ -12,11 +12,15 @@ export default function Member({
   isSpeaking: boolean;
   audioChunk: string;
 }) {
-  const { playAudio } = usePlayAudio();
+  const { playAudio, resetStart } = usePlayAudio(new AudioContext());
 
   useEffect(() => {
     playAudio(audioChunk);
   }, [audioChunk]);
+
+  useEffect(() => {
+    if (!isSpeaking) resetStart();
+  }, [isSpeaking]);
 
   return (
     <div
