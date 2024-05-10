@@ -11,7 +11,9 @@ export default function Disconnect() {
   const handleClick = () => {
     if (conn) {
       const ws = new WebSocket(
-        `ws://127.0.0.1:8080/ws/unregister?username=${sessionStorage.getItem(
+        `ws://${
+          process.env.NEXT_PUBLIC_BACKEND_URL
+        }/ws/unregister?username=${sessionStorage.getItem(
           "username"
         )}&roomName=${roomName}`
       );

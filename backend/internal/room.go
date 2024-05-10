@@ -14,6 +14,11 @@ func InitRoom() {
 
 		Rooms = make(map[string]*Room, 0)
 
+		Rooms["default"] = &Room{
+			Name:      "default",
+			CreatedBy: "",
+			Clients:   make(map[string]*Client),
+		}
 	}
 }
 

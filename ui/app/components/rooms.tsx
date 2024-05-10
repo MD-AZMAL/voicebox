@@ -2,11 +2,17 @@ import RoomItem from "@/app/components/roomItem";
 import { Room } from "@/app/lib/types";
 
 export default async function Rooms() {
-  const res = await fetch("http://localhost:8080/get-rooms", {
-    cache: "no-cache",
-  });
+  let res;
 
-  const rooms = (await res.json()) as Room[];
+  try {
+    res = await fetch(`http://${process.env.BACKEND_URL as string}/get-rooms`, {
+      cache: "no-cache",
+    });
+  } catch (error) {
+    console.error(error);
+  }
+
+  const rooms = res ? ((await res?.json()) as Room[]) : ([] as Room[]);
 
   return (
     <>
